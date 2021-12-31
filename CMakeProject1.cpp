@@ -1,67 +1,76 @@
 ﻿// CMakeProject1.cpp: определяет точку входа для приложения.
-//
 
-#pragma once
+#include <iostream> // подключаем интерфейс для ввода/вывода
+#include <fstream> // подключаем интерфейс для работы с файлами
+#include <string.h> // подключаем интерфейс для работы со строками
+#include <math.h> // подключаем интерфейс для матем. вычислений
+#include <map> // подключаем интерфейс для ассоциативных массивов
 
-#include <iostream>
-#include <cstdlib>
-#include <fstream>
-#include <string.h>
-#include <math.h>
-#include <map>
+using namespace std; // используем стандартное пространство имён
 
-using namespace std;
-
-int main()
+int main() // метод, запускаемый при запуске
 {
-    locale::global(locale(""));
-    //char buff[4000]; // буфер считываемого из файла текста
-    string fileName;
-    string fileExt;
-    unsigned char byte;
-    size_t fileExpPosition;
-    map<int, double> mymap;
-    map<int, double>::iterator it;
-    int exitbytes[255], i, exitbyte;
-    int sum = 0;
+    locale::global(locale("")); // определяем локаль
+    string fileName; // строковая переменная для имени файла, для чтения
+    string fileExt; // строковая переменная для расширения файла, для чтения
+    unsigned char byte; // переменная для байта
+    size_t fileExpPosition; // переменная для позиции точки в имени файла
+    map<int, int> mymap; // ассоциативный массив для байтов
+    map<int, int>::iterator it; // итератор для массива mymap
+    map<int, double> exitbytes; // ассоциативный массив для записи в файл
+    map<int, double>::iterator itbyte; // итератор для массива exitbytes
+    int exitbyte, sum = 0; // определение целых переменных
+    double entropy = 0.0; // вещественная переменная для энтропии
 
-    cin >> fileName;
-    ifstream fin;
-    fin.open(fileName, std::ifstream::binary); // Открываем файл
-    ofstream fout;
-    fileExpPosition = fileName.find(".") + 1;
-    fileExt = string(fileName, fileExpPosition);
-    
-    fout.open(fileExt + "07.tab", ios_base::out | ios_base::trunc);
+    cout << "Введите имя файла:" << endl;
+    cin >> fileName; // пользователь вводит имя файла
 
-    if (!fin.is_open()) // если файл не открыт
-        cout << "Файл не может быть открыт!\n"; // сообщить об этом
-    else
+    ifstream fin; //открываем поток для чтения файла
+    fin.open(fileName, std::ifstream::binary); // открываем файл для чтения
+
+    if (!fin.is_open()) // если файл невозможно открыть
+        cout << "Файл не может быть открыт!\n"; // вывожу сообщение
+    else // если же файл можно открыть, то приложение продолжает работу
     {
-        i = 0;
-        while (fin.read((char*)&byte, sizeof(unsigned char))) {
-            sum += sizeof byte;
-            exitbyte = (int)byte;
-            //cout << exitbyte << endl;
-
-            mymap[exitbyte]++;
-
-            //fin >> buff; // считали слово из файла
-            //fout << buff << endl; // напечатали
-
+        cout << "Файл открыт для чтения" << endl; // вывожу сообщение
+        while (fin.read((char*)&byte, sizeof(unsigned char))) { // читаем файл побайтово
+            sum += sizeof byte; // счётчик количества байт
+            exitbyte = (int)byte; // преобразовываем в int
+            mymap[exitbyte]++; // байт встретился ещё один раз
         }
-        for (it = mymap.begin(); it != mymap.end(); ++it) {
-            exitbytes[it->first] = it->second / sum;
-            cout << it->first << " = " << endl;
-            printf("Переменная exitbytes[it->first] = %.3f", it->second / sum);
-            cout << endl;
-        }
-        //fin.getline(buff, 50); // считали строку из файла
-        //fout << buff << endl; // напечатали эту строку
+        fin.close(); // закрываем файл, открытый для чтения 
+        cout << "Байты записаны в промежуточный массив. Файл закрыт." << endl; // вывожу сообщение
 
-        fin.close(); // закрываем файл
-        fout.close();
+        fileExpPosition = fileName.find(".") + 1; // ищем точку, чтобы отделить расширение от имени
+        fileExt = string(fileName, fileExpPosition); // получаем расширение файла, открытого для чтения
+
+        cout << "Создаю(перезаписываю) файл: " << fileExt << "07.tab" << endl; // вывожу сообщение
+        ofstream fout; //открываем поток для записи в файл
+        fout.open(fileExt + "07.tab", ios_base::out | ios_base::trunc); // если файл существует, то очищаем его, если нет, то создаём
+        cout << "Файл " << fileExt << "07.tab" << " открыт для записи" << endl;
+
+        for (it = mymap.begin(); it != mymap.end(); ++it) { // проходимся в цикле по ассоциативному массиву
+            exitbytes[it->first] = it->second / (sum + 0.1); // записываем в массив, где ключ - это байт, значение - насколько часто встречается
+        }
+
+        fout << fileName << endl; // записываем имя файла, открытого для чтения
+        fout << sum << endl; // записываем в файл количество байт
+        fout << endl;// добавляем пустую строку
+
+        for (itbyte = exitbytes.begin(); itbyte != exitbytes.end(); ++itbyte) { // проходимся в цикле по ассоциативному массиву
+            fout << itbyte->first << "\t" << itbyte->second << endl; // записываем Байт, затем символ табуляции, затем величину
+            entropy -= itbyte->second * log10(itbyte->second) / log10(2); // рассчитываем величину энтропии по Шеннону
+        }
+
+        fout << endl; // добавляем пустую строку
+        fout << entropy; // записываем последней строчкой величину энтропии Шеннона 
+
+        cout << "Запись в файл завершена" << endl; // вывожу сообщение
+
+        fout.close(); // закрываем файл, открытый для записи
+
+        cout << "Работа приложения завершена успешно." << endl; // вывожу сообщение
     }
-    system("pause");
-    return 0;
+    system("pause"); // для продолжения нажмите клавишу
+    return 0; // int main в случае успешного выполнения должна возвращать код 0
 }
