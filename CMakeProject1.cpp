@@ -8,6 +8,13 @@
 
 using namespace std; // используем стандартное пространство имён
 
+struct cmp // компаратор, меняющий порядок ключей в массиве
+{
+    bool operator()(const double& a, const double& b) const //метод принимает две ссылки и сравнивает их
+    {
+        return a > b; // возвращает булев тип, сравнивая значения
+    }
+};
 int main() // метод, запускаемый при запуске
 {
     locale::global(locale("")); // определяем локаль
@@ -17,10 +24,11 @@ int main() // метод, запускаемый при запуске
     size_t fileExpPosition; // переменная для позиции точки в имени файла
     map<int, int> mymap; // ассоциативный массив для байтов
     map<int, int>::iterator it; // итератор для массива mymap
-    map<int, double> exitbytes; // ассоциативный массив для записи в файл
-    map<int, double>::iterator itbyte; // итератор для массива exitbytes
+    map<double, int, cmp> exitbytes; // ассоциативный массив для записи в файл
+    map<double, int>::iterator itbyte; // итератор для массива exitbytes
     int exitbyte, sum = 0; // определение целых переменных
     double entropy = 0.0; // вещественная переменная для энтропии
+    double key;
 
     cout << "Введите имя файла:" << endl;
     cin >> fileName; // пользователь вводит имя файла
@@ -50,7 +58,8 @@ int main() // метод, запускаемый при запуске
         cout << "Файл " << fileExt << "07.tab" << " открыт для записи" << endl;
 
         for (it = mymap.begin(); it != mymap.end(); ++it) { // проходимся в цикле по ассоциативному массиву
-            exitbytes[it->first] = it->second / (sum + 0.1); // записываем в массив, где ключ - это байт, значение - насколько часто встречается
+            key = it->second / (sum + 0.1);
+            exitbytes[key] = it->first; // записываем в массив, где ключ - это байт, значение - насколько часто встречается
         }
 
         fout << fileName << endl; // записываем имя файла, открытого для чтения
@@ -58,8 +67,8 @@ int main() // метод, запускаемый при запуске
         fout << endl;// добавляем пустую строку
 
         for (itbyte = exitbytes.begin(); itbyte != exitbytes.end(); ++itbyte) { // проходимся в цикле по ассоциативному массиву
-            fout << itbyte->first << "\t" << itbyte->second << endl; // записываем Байт, затем символ табуляции, затем величину
-            entropy -= itbyte->second * log10(itbyte->second) / log10(2); // рассчитываем величину энтропии по Шеннону
+            fout << itbyte->second << "\t" << itbyte->first << endl; // записываем Байт, затем символ табуляции, затем величину
+            entropy -= itbyte->first * log10(itbyte->first) / log10(2); // рассчитываем величину энтропии по Шеннону
         }
 
         fout << endl; // добавляем пустую строку
